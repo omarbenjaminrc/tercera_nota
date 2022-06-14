@@ -1,6 +1,6 @@
 const URL = '164.92.84.70:3000';
 
-// encabezados de las tablas de la api
+// "encabezados" es un objeto con los nombres de las tablas como llave y una lista de los nombres de las columnas para ser usadas por las funciones que crean el contenido del archivo tabla.html
 const   encabezados = {
         'cliente'   :   ["id_cliente","dv","nombres","apellidos","email","celular","fecha_registro"],
         'gestion'   :   ["id_gestion","id_usuario","id_cliente","id_tipo_gestion","id_resultado","comentarios","fecha_registro"],
@@ -9,6 +9,7 @@ const   encabezados = {
         'usuario'   :   ["id_usuario","dv","nombres","apellidos","email","celular","username","password","fecha_registro"]
         }
 
+// "encabezados_b" es un objeto con los nombres de las tablas como llave y una lista de los nombres de las columnas sin incluir los datos que el usuario no debe ser capaz de ingresar para ser usadas por las funciones que crear el contenido del archivo formulario.html 
 const   encabezados_b = {
         'cliente'   :   ["id_cliente","dv","nombres","apellidos","email","celular"],
         'gestion'   :   ["id_usuario","id_cliente","id_tipo_gestion","id_resultado","comentarios"],
@@ -19,10 +20,12 @@ const   encabezados_b = {
 
 // funciones para interactuar con la api
 const agregar = () => {
-// esta funcion toma la variable objeto que tiene que contener un objeto con llaves que tienen que coinsidir con los nombres de las tablas, la variable tabla es para incluir el nombre de la tabla en la que va a agregar la instancia
-    const tabla = obtener_variable_url('tabla');
-    const objeto = crear_objeto_raw(tabla);
+    // funcion que ingresar un nuevo dato dentro de cualquier tabla
+
+    const tabla = obtener_variable_url('tabla'); //se obtiene el nombre de la tabla donde hacer el cambio
+    const objeto = crear_objeto_raw(tabla); //se obtienen los datos que se van a inyectar
     let myHeaders = new Headers();
+
     myHeaders.append("Content-Type", "application/json");
     
     let raw = JSON.stringify(objeto);
@@ -38,16 +41,16 @@ const agregar = () => {
         .then(response => {  
             alert((response.status == 200) ? "Se pudo ingresar el registro" : "No se pudo ingresar el registro")
         })
-
         .then(result => console.log(result))
         .catch(error => console.log('error', error));
 }
 
 const actualizar = () => {
-    // esta funcion toma la variable objeto que tiene que contener un objeto con llaves que tienen que coinsidir con los nombres de las tablas, la variable tabla es para incluir el nombre de la tabla en la que va a agregar la instancia, id_campo es el identificador del campo que quieres actualizar
-    const tabla = obtener_variable_url('tabla');
-    const objeto = crear_objeto_raw(tabla);
-    const id_campo = obtener_variable_url('id');
+    // funcion para actualizar cualquier dato en cualquier tabla
+
+    const tabla = obtener_variable_url('tabla'); // se obtiene el nombre de la tabla donde hacer el cambio
+    const objeto = crear_objeto_raw(tabla); // se obtienen los datos que se van a inyectar
+    const id_campo = obtener_variable_url('id'); // se obtiene el id del dato que se va a alterar
 
     let myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
@@ -69,9 +72,10 @@ const actualizar = () => {
 }
 
 const eliminar = () => {
-// la variable tabla es para incluir el nombre de la tabla en la que va a eliminar la instancia, id_campo es el identificador del campo que quieres actualizar
-    const tabla = obtener_variable_url('tabla');
-    const id_campo = obtener_variable_url('id');
+    // funcion para eliminar un dato detro de una tabla
+
+    const tabla = obtener_variable_url('tabla'); // se obtiene el nombre de la tabla 
+    const id_campo = obtener_variable_url('id'); // se obtiene el id del dato que se va a eliminar
 
     let requestOptions = {
         method: 'DELETE',
@@ -87,36 +91,48 @@ const eliminar = () => {
 }
 
 const obtener = () => {
-// la variable tabla es para incluir el nombre de la tabla en la que va a obtener las instancias, funcion es el nombre de una funcion que agrega el cuerpo de la tabla con las intancias de la base de datos
+    // funcion para obtener todos los datos de cualquier tabla 
 
-    const tabla = obtener_variable_url('tabla');
-    if (tabla === 'gestion'){
+    const tabla = obtener_variable_url('tabla'); // se obtiene el nombre de la tabla
+
+    if (tabla === 'gestion'){ // la tabla gestion necesita una funcion distinta por razones de funcionalidad 
         obtener_gestion();
-    }else{
-    crear_encabezados(tabla);
-    let requestOptions = {
-        method: 'GET',
-        redirect: 'follow'
-    };
-    
-    fetch(`http://${URL}/api/${tabla}?_size=100`, requestOptions)
-        .then(response => response.json())
-        .then((json) => json.forEach(crear_contenido_tabla))
-        .then(result => console.log(result))
-        .catch(error => console.log('error', error));
-    }
+    } else {
+        crear_encabezados(tabla); // se crean los encabezados de las tablas
+
+        let requestOptions = {
+            method: 'GET',
+            redirect: 'follow'
+        };
+        
+        fetch(`http://${URL}/api/${tabla}?_size=100`, requestOptions)
+            .then(response => response.json())
+            .then((json) => json.forEach(crear_contenido_tabla))
+            .then(result => console.log(result))
+            .catch(error => console.log('error', error));
+        }
 }
 
 const obtener_gestion = () => {
+    // crea el contenido de la tabla gestion 
+
     let titulos = document.querySelector(`#encabezado`)
-    titulos.innerHTML += `<th>id_gestion</th><th>cliente</th><th>usuario</th><th>comentarios</th><th>tipo_gestion</th><th>resultado</th><th>fecha_registro</th>
+    titulos.innerHTML += 
+    `
+        <th>id_gestion
+        <th>cliente</th>
+        <th>usuario</th>
+        <th>comentarios</th>
+        <th>tipo_gestion</th
+        ><th>resultado</th>
+        <th>fecha_registro</th>
     `
     let myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
 
     let raw = JSON.stringify({
     "query": "select g.id_gestion,CONCAT(c.nombres, ' ',c.apellidos) as cliente,CONCAT(u.nombres, ' ',u.apellidos) as usuario,g.comentarios,tg.nombre_tipo_gestion as 'tipo gestión',r.nombre_resultado as resultado,g.fecha_registro from gestion g,cliente c, usuario u, tipo_gestion tg,resultado r where g.id_cliente = c.id_cliente and g.id_usuario = u.id_usuario and g.id_resultado = r.id_resultado and g.id_tipo_gestion = tg.id_tipo_gestion"
-});
+    });
 
     let requestOptions = {
     method: 'POST',
@@ -133,9 +149,11 @@ const obtener_gestion = () => {
 }
 
 const obtener_uno = (funcion) => {
-// la variable tabla es para incluir el nombre de la tabla en la que va a obtener las instancias, funcion es el nombre de una funcion que agrega el cuerpo de la tabla con las intancias de la base de datos, id es el identificador del campo que quieres obtener 
-    const tabla = obtener_variable_url('tabla');
-    const id = obtener_variable_url('id');
+    // obtiene cualquier dato de cualquier tabla 
+    // se ingresa como variable la funcion sobre la que va a iterar el forEach
+
+    const tabla = obtener_variable_url('tabla'); // se obtiene el nombre de la tabla para hacer la consulta
+    const id = obtener_variable_url('id'); // se obtine el id del dato que se quiere consultar
 
     let requestOptions = {
         method: 'GET',
@@ -149,11 +167,37 @@ const obtener_uno = (funcion) => {
         .catch(error => console.log('error', error));
 }
 
+const obtener_comprobacion = (id_input) => {
+    // comprueba si una id existe detro de los campos de una tabla
+
+    id = document.querySelector(`#${id_input}`).value; // capturar el varor interno del input
+    tabla = id_input.slice(3); // id_input viene en el formato id_(nombre_tabla), se cortan las primeras 3 letras  para quedar solo con el nombre de la tabla
+
+    let requestOptions = {
+        method: 'GET',
+        redirect: 'follow'
+    };
+    
+    fetch(`http://${URL}/api/${tabla}/${id}`, requestOptions)
+        .then(response => response.json())
+        .then(response => {
+            console.log(response)
+            alert((response[0][`id_${tabla}`] == id) ? 'Existe en la base de datos' : 'No existe en la base de datos' )
+        })
+        .catch(error => {
+            alert('No existe en la base de datos')
+            console.log('error', error)
+        });
+}
+
 // funciones para generar elementos html del archivo tabla.html 
+
 const crear_encabezados = () => {
-// esta funcion toma todos los encabezados y los genera un encabezado en la tabla
-    tabla = obtener_variable_url('tabla');
+    // esta funcion toma todos los encabezados y los genera un encabezado en la tabla
+
+    tabla = obtener_variable_url('tabla'); // se obtiene el nombre de la tabla 
     thead_table = document.querySelector('#encabezado');
+
     for (const encabezado of encabezados[tabla]) {
         thead_table.innerHTML += `<th>${encabezado}</th>`;
     }
@@ -161,8 +205,10 @@ const crear_encabezados = () => {
 }
 
 const crear_contenido_tabla = (elemento,index,arreglo) =>{
-    let tabla = obtener_variable_url('tabla');
-    objeto = Object.keys(elemento)
+    // toma la consulta a la api y procesa los datos para ser mostrados en el archivo tabla.html
+
+    let tabla = obtener_variable_url('tabla'); // se obtiene el nombre de la tabla
+    let objeto = Object.keys(elemento) // se obtiene las llaves del elemento 
     let fila = '<tr>'
     for (const llave in elemento) {
         fila += `<td>${elemento[llave]}</td>`
@@ -191,34 +237,16 @@ const crear_contenido_tabla = (elemento,index,arreglo) =>{
     arreglo[index] = document.querySelector("tbody").innerHTML += '</tr>';
 }
 
-const obtener_comprobacion = (id_input) => {
-    id = document.querySelector(`#${id_input}`).value;
-    tabla = id_input.slice(3);
-    let requestOptions = {
-        method: 'GET',
-        redirect: 'follow'
-    };
-    
-    fetch(`http://${URL}/api/${tabla}/${id}`, requestOptions)
-        .then(response => response.json())
-        .then(response => {
-            console.log(response)
-            alert((response[0][`id_${tabla}`] == id) ? 'Existe en la base de datos' : 'No existe en la base de datos' )
-        })
-        .catch(error => {
-            alert('No existe en la base de datos')
-            console.log('error', error)
-        });
-}
 // funciones para generar elementos html en el archivo formulario.html
 
 const crear_formulario = () => {
 
-    const accion = obtener_variable_url('accion');
-    const tabla = obtener_variable_url('tabla');
-    const formulario = document.querySelector('fieldset');
-    let lista_encabezados = (accion === 'eliminar') ? encabezados : encabezados_b;
+    const accion = obtener_variable_url('accion'); //se obtiene la accion para la que se crea el formulario
+    const tabla = obtener_variable_url('tabla'); // se obtiene el nombre de la tabla
+    const formulario = document.querySelector('fieldset'); // se hace una referencia al fieldset
+    let lista_encabezados = (accion === 'eliminar') ? encabezados : encabezados_b; // dependiendo de la accion se define que encabezados se van a usar 
 
+    // crear los inputs
     for (const encabezado of lista_encabezados[tabla]) {
         formulario.innerHTML += `
             <div class="input-group mb-2" id="div_${encabezado}">
@@ -227,21 +255,27 @@ const crear_formulario = () => {
             </div>
         `;
     }
+
+    // en caso de ser la tabla gestion agregar los botones para la comprobacion de datos
     if (tabla === 'gestion') {
+        //se hace un if para evitar que se agreguen los botones en caso de que la accion sea eliminar
         if (accion === 'agregar' || accion === 'editar'){
             let encabezados = ['id_usuario','id_cliente','id_tipo_gestion','id_resultado'];
-        for (const encabezado of encabezados) {
-            let div = document.querySelector(`#div_${encabezado}`);
-            div.innerHTML += `<input type= "button" value="comprobar" onclick="obtener_comprobacion('${encabezado}')">`;
-        }
+            // se agregan los botones
+            for (const encabezado of encabezados) {
+                let div = document.querySelector(`#div_${encabezado}`);
+                div.innerHTML += `<input type= "button" value="comprobar" onclick="obtener_comprobacion('${encabezado}')">`;
+                }
         }
     }
     
 }
 
 const crear_objeto_raw = () => {
-    tabla = obtener_variable_url('tabla');
+    // se capturan todos los datos de los inputs y se los devulete en formato json 
+    tabla = obtener_variable_url('tabla'); // se obtiene el nombre de la tabla
     let objeto = {};
+
     for (const encabezado of encabezados_b[tabla]){
         objeto[encabezado] = document.querySelector(`#${encabezado}`).value 
     }
@@ -249,6 +283,8 @@ const crear_objeto_raw = () => {
 }
 
 const determinar_accion = () => {
+    // se personalisa el formulario dependiendo de la accion de la tabla
+
     const accion = obtener_variable_url('accion');
     const tabla = obtener_variable_url('tabla');
     const boton = document.querySelector('#boton_accion');
@@ -287,10 +323,13 @@ const determinar_accion = () => {
 }
 
 const inyectar_valor= (elemento,index,arreglo) => {
+    // se toma el elemento y se ingresa el valor al imput
     let accion = obtener_variable_url('accion');
     let tabla = obtener_variable_url('tabla');
     let lista_encabezados = (accion === 'eliminar') ? encabezados : encabezados_b;
     let lista = lista_encabezados[tabla];
+
+        // ingresar los valores a los inputs
         for (const campo of lista) {
             let input = document.querySelector(`#${campo}`)
             input.setAttribute('value',`${elemento[campo]}`)
@@ -300,6 +339,7 @@ const inyectar_valor= (elemento,index,arreglo) => {
 // funcion que toma las vairables pasadas por la url 
 
 const obtener_variable_url = (nombre) => {
+    // busca el nombre de la variable ingresada en la url y devuelve el valor si existe
     let queryString = window.location.search;
     let urlParams = new URLSearchParams(queryString);
     let id = urlParams.get(`${nombre}`);
